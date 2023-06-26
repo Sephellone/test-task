@@ -33,6 +33,8 @@
                 </span>                
             </div>
         </transition>
+
+        <p class="error-message" v-if="error">Something went wrong. Try refreshing the page</p>
     </div>
 </template>
 
@@ -43,25 +45,34 @@
             return {
                 url: 'https://alex.devel.softservice.org/testapi/',
                 balance: null,
-                balanceGoal: 15
+                balanceGoal: 15,
+                error: null
             }
         },
         created() {
             fetch(this.url)
-                .then(response => response.json())
-                .then(data => {
-                this.balance = data.balance_usd;
-                });
-
-            setTimeout(() => {
-                const interval = setInterval(() => {
-                    if(this.balance < this.balanceGoal) {
-                        this.balance = Number((this.balance + 0.2).toFixed(1));
-                    } else {
-                        clearInterval(interval);
+                .then(response => {
+                    if(response.ok) {
+                        return response.json()
                     }
-                }, 2000);
-            }, 1500)
+                    
+                    throw new Error('Something went wrong');
+                })
+                .then(data => {
+                    this.balance = data.balance_usd;
+                })
+                .then( () => {
+                    const interval = setInterval(() => {
+                        if(this.balance < this.balanceGoal) {
+                            this.balance = Number((this.balance + 0.2).toFixed(1));
+                        } else {
+                            clearInterval(interval);
+                        }
+                    }, 2000);
+                })
+                .catch(error => {
+                    this.error = error;
+                });
         },
         computed: {
             percentage() {
@@ -215,5 +226,12 @@
 
   .progress__need span {
     margin-left: 5px;
+  }
+
+  .error-message {
+    margin-top: 10px;
+    color: #aa0011;
+    font-size: 13px;
+    font-weight: 400;
   }
 </style>
